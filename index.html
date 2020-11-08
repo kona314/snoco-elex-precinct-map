@@ -60,12 +60,18 @@
                 height: 100%;
             }
         }
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: black;
+                color: white;
+            }
+        }
     </style>
 </head>
 
 <body>
     <div class="container-fluid">
-        <div class="row" style="height: 100%;">
+        <div class="row dark" style="height: 100%;">
             <div class="col-12 col-md-2 left-column">
                 <p class="mt-1 small">Made by <a href="https://konafarry.com">Kona Farry</a>. Data from <a href="https://www.snohomishcountywa.gov/5737/Get-Current-and-Past-Election-Results-an">Snohomish County</a>.</p>
                 <select id="race-list" class="mb-1 form-control custom-select" onchange="showRaceResults()">
@@ -98,13 +104,28 @@
 <script>
     mapboxgl.accessToken = 'pk.eyJ1Ijoia29uYTMxNCIsImEiOiJjanIxMjcyNmowaGFkNDNud3dmcXE0YXNqIn0.-1Icvfh04HycYwJczACUaA';
 
-    // let selectedElection = "latest"
-    // let selectedRaceID = "300"
-    // let resultData = null
+    function getMapTheme() {
+        if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            return "mapbox://styles/mapbox/dark-v10"
+        } else {
+            return "mapbox://styles/mapbox/light-v10"
+        }
+    }
+
+    window.matchMedia("(prefers-color-scheme: dark)").addListener(e => {
+        Elex.map.setStyle(getMapTheme())
+        Elex.map.on("style.load", e => {
+            Elex.map.addSource("precincts", {
+                "type": "geojson",
+                "data": Elex.resultData,
+            })
+            showRaceResults()
+        })
+    })
 
     Elex.map = new mapboxgl.Map({
         container: 'map',
-        style: 'mapbox://styles/mapbox/streets-v11',
+        style: getMapTheme(),
         center: [-121.7545032, 48.0398398],
         zoom: 8.8,
     });

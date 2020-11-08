@@ -1,0 +1,257 @@
+<html>
+
+<head>
+    <title>SnoCo Precinct Results Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/1.12.0/mapbox-gl.min.js"
+        integrity="sha512-CKUHy1bfzUt3RsTwmPfgdg1ZaV/d+AMl3g4bo503FUTzmU5RnUbbQ0G+I/EMGIkzOUNVLEM6xZ2cRaUlNrHfbA=="
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/1.12.0/mapbox-gl.min.css"
+        integrity="sha512-KxWh2zhfqjqLf8V6nej7w8PbXiZuqrQq+PA1EE+73+7dpYbMocKIXKPlq50ZaWPDY5iQcyaX3I4xLUuOWBCCug=="
+        crossorigin="anonymous" />
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+        integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+    <style>
+        .key-color {
+            border: 1px solid black;
+        }
+
+        .left-column {
+            overflow-y: scroll;
+            position: absolute;
+            max-height: 50%;
+            top: 0px;
+            left: 0px;
+        }
+
+        .right-column {
+            /* overflow-y: hidden; */
+            position: absolute;
+            bottom: 0px;
+            top: 50%;
+            height: 100%;
+            /* left: 0px; */
+        }
+        .map {
+            width: 100%;
+            height: 50%;
+        }
+        @media screen and (min-width: 768px) {
+            .left-column {
+                /* left: 0px;
+                top: 0px;
+                bottom: 0px; */
+                max-height: 100%;
+            }
+            .right-column {
+                right: 0px;
+                top: 0px;
+                /* bottom: 0px; */
+            }
+            .map {
+                width: 100%; 
+                height: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row" style="height: 100%;">
+            <div class="col-12 col-md-2 left-column">
+                <select id="race-list" class="mt-3 mb-3" style="max-width: 100%;" onchange="showRaceResults()">
+                    <option value="300" disabled selected>Select a race</option>
+                </select>
+                <div id="details">
+                    <h5>Snohomish County</h5>
+                    Registered voters: <span id="det-reg-voters"></span><br>
+                    Ballots cast: <span id="det-ballots-cast"></span><br>
+                    Turnout: <span id="det-turnout"></span><br>
+                    <br>
+                    <div id="precinct-detail" hidden>
+                        <h5 id="det-precinct-name">This Precinct</h5>
+                        Registered voters: <span id="det-precinct-reg-voters"></span><br>
+                        Ballots cast: <span id="det-precinct-ballots-cast"></span><br>
+                        Turnout: <span id="det-precinct-turnout"></span><br>
+                        <br>
+                    </div>
+                    <h5>Candidates</h5>
+                    <p id="det-candidate-list"></p>
+                </div>
+            </div>
+            <div class="col-12 col-md-10 right-column">
+                <div class="map" id='map'></div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1Ijoia29uYTMxNCIsImEiOiJjanIxMjcyNmowaGFkNDNud3dmcXE0YXNqIn0.-1Icvfh04HycYwJczACUaA';
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: [-121.7545032, 48.0398398],
+        zoom: 8.8,
+    });
+
+    function getRaces() {
+        let request = new XMLHttpRequest()
+        request.open("GET", "races.json", false)
+        request.send()
+        let races = JSON.parse(request.responseText)
+        let raceSelect = document.getElementById("race-list")
+        Object.keys(races).forEach(raceID => {
+            let o = new Option(races[raceID].name, raceID)
+            raceSelect.add(o)
+        })
+        return races
+        // return JSON.parse(request.responseText)
+    }
+
+    let races = getRaces()
+    let selectedRaceID = "300"
+    let resultData = null
+    // getRaces()
+
+    function populateSidebar(precinctInfo, precinctResults) {
+        let race = races[selectedRaceID]
+        // document.getElementById("det-race-name").innerHTML = race.name
+        document.getElementById("det-reg-voters").innerHTML = race.voters
+        document.getElementById("det-ballots-cast").innerHTML = race.ballots_cast
+        document.getElementById("det-turnout").innerHTML = Math.round((race.ballots_cast / race.voters) * 100) + "%"
+        document.getElementById("det-candidate-list").innerHTML = ""
+        for (i in race.candidates) {
+            let can = race.candidates[i]
+            // let li = document.createElement("li")
+            document.getElementById("det-candidate-list").innerHTML += `<div class="key-color" style="background-color: ${can.color}; height: 20px; width: 20px;"></div>`
+            document.getElementById("det-candidate-list").innerHTML += "<b>" + can.name + "</b><br>"
+            document.getElementById("det-candidate-list").innerHTML += "<i class='small'>County</i><br>" + can.total_votes + " (" + Math.round((can.total_votes / race.ballots_cast) * 100) + "%)"
+            if (precinctInfo && precinctResults && precinctResults.candidates[can.name]) {
+                let precicntCan = precinctResults.candidates[can.name]
+                document.getElementById("det-candidate-list").innerHTML += "<br><i class='small'>" + precinctInfo.PRECINCT_N + "</i><br>" + precicntCan.count + " (" + Math.round((precicntCan.count / precinctInfo.ballots_cast) * 100) + "%)"
+            }
+            // document.getElementById("det-candidate-list").appendChild(li)
+        }
+        if (precinctInfo) {
+            document.getElementById("det-precinct-name").innerHTML = precinctInfo.PRECINCT_N
+            document.getElementById("det-precinct-reg-voters").innerHTML = precinctInfo.voters
+            document.getElementById("det-precinct-ballots-cast").innerHTML = precinctResults.ballots_cast
+            document.getElementById("det-precinct-turnout").innerHTML = Math.round((precinctInfo.ballots_cast / precinctInfo.voters)*100) + "%"
+        }
+        document.getElementById("precinct-detail").hidden = precinctInfo == null
+    }
+
+    function getData() {
+        let req = new XMLHttpRequest()
+        req.open("GET", "latest.geojson", true)
+        req.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                resultData = JSON.parse(this.responseText)
+                map.addSource("precincts", {
+                    "type": "geojson",
+                    "data": resultData,
+                })
+                showRaceResults()
+            }
+        }
+        req.send()
+    }
+
+    function showRaceResults(usingRaceID) {
+        let raceID
+        if (typeof (usingRaceID) == "string") {
+            raceID = usingRaceID
+        } else {
+            raceID = document.getElementById("race-list").value
+            selectedRaceID = raceID
+        }
+        if (map.getLayer('precincts')) {
+            map.removeLayer("precincts")
+            // map.removeSource("precincts")
+        }
+        // map.removeSource("precincts")
+        for (i = 0; i < resultData.features.length; i++) {
+            resultData.features[i].properties.dcolor = "black"
+            resultData.features[i].properties.dopacity = 0.0
+            if (resultData.features[i].properties.races && resultData.features[i].properties.races[raceID]) {
+                let candidates = resultData.features[i].properties.races[raceID].candidates
+                let totalCast = resultData.features[i].properties.races[raceID].ballots_cast
+                let maxVotes = 0
+                let winner = null
+                Object.keys(candidates).forEach(k => {
+                    if (candidates[k].count > maxVotes) {
+                        maxVotes = candidates[k].count
+                        winner = k
+                    }
+                })
+                if (winner != null) {
+                    resultData.features[i].properties.dcolor = candidates[winner].color
+                    resultData.features[i].properties.dopacity = candidates[winner].count / totalCast
+                }
+            }
+        }
+        populateSidebar()
+        map.getSource("precincts").setData(resultData)
+        map.addLayer({
+            "id": "precincts",
+            "type": "fill",
+            "source": "precincts",
+            "paint": {
+                "fill-color": ["get", "dcolor"],
+                "fill-outline-color": "black",
+                "fill-opacity": ["get", "dopacity"],
+            }
+        });
+    }
+
+    map.on('load', function () {
+        getData()
+
+        map.on('click', 'precincts', function (e) {
+            let data = e.features[0].properties
+            let html = `No data on precinct ${data.PRECINCT_N} for this race.`
+            if (data.races) {
+                let races = JSON.parse(data.races)
+                if (races[selectedRaceID]) {
+                    let race = races[selectedRaceID]
+                    populateSidebar(data, race)
+                    html = "<b>" + data.PRECINCT_N + "</b><br><i>" + race.name + "</i><p>"
+                    let candidates = Object.keys(race.candidates)
+                    for (i in candidates) {
+                        let name = candidates[i]
+                        if (race.candidates[name].count > 0) {
+                            html += `<b>` + name + "</b>: " + Math.round((race.candidates[name].count / race.ballots_cast) * 100) + "%<br>"
+                        }
+                    }
+                    html += "</p>"
+                }
+            }
+
+            new mapboxgl.Popup()
+                .setLngLat(e.lngLat)
+                .setHTML(html)
+                .addTo(map);
+        });
+
+        // Change the cursor to a pointer when the mouse is over the states layer.
+        map.on('mouseenter', 'precincts', function () {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+
+        // Change it back to a pointer when it leaves.
+        map.on('mouseleave', 'precincts', function () {
+            map.getCanvas().style.cursor = '';
+        });
+
+    });
+
+</script>
+
+</html>

@@ -213,6 +213,8 @@
 
     map.on('load', function () {
         getData()
+        map.dragRotate.disable()
+        map.touchZoomRotate.disableRotation()
 
         map.on('click', 'precincts', function (e) {
             let data = e.features[0].properties

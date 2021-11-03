@@ -1,23 +1,47 @@
 const elections = {
-    "latest": {
-        "name": "General Election, November 2020",
-        "races": "races.json",
-        "data": "latest.geojson",
+    defaultElectionId: "2021gen",
+
+    // test: {
+    //     name: "Test",
+    //     races: "past/test.json",
+    //     data: "past/test.geojson",
+    //     defaultRaceId: "3",
+    // },
+    "2021gen": {
+        name: "2021 General",
+        races: "past/2021gen_races.json",
+        data: "past/2021gen.geojson",
+        defaultRaceId: "9",
     },
+    "2021prim": {
+        name: "2021 Primary",
+        races: "past/2021primary_races.json",
+        data: "past/2021primary_data.geojson",
+        defaultRaceId: "3",
+    },
+    "2020gen": {
+        name: "2020 General",
+        races: "past/2020gen_races.json",
+        data: "past/2020gen_data.geojson",
+        defaultRaceId: "300",
+    },
+    // "2020presprimary": {
+    //     name: "2020 Presidential Primary",
+    //     races: "past/2020presprimary_races.json",
+    //     data: "past/2020presprimary.geojson",
+    //     defaultRaceId: "111",
+    // },
     // "2019gen": {
-    //     "name": "General Election, November 2019",
-    //     "races": "past/2019gen_races.json",
-    //     "data": "past/2019gen_data.geojson",
+    //     name: "2019 General",
+    //     races: "past/2019gen_races.json",
+    //     data: "past/2019gen_data.geojson",
+    //     defaultRaceId: "423",
     // },
     // "2018gen": {
-    //     "name": "General Election, November 2018",
-    //     "races": "past/2018gen_races.json",
-    //     "data": "past/2018gen_data.geojson",
-    // },
-    // "2016gen": {
-    //     "name": "General Election, November 2016",
-    //     "races": "past/2016gen_races.json",
-    //     "data": "past/2016gen_data.geojson",
+    //     name: "2018 General",
+    //     races: "past/2018gen_races.json",
+    //     data: "past/2018gen_data.geojson",
+    //     defaultRaceId: "43",
     // },
 }
 
@@ -78,14 +102,9 @@ function getData(completion) {
     req.send()
 }
 
-function showRaceResults(usingRaceID) {
-    let raceID
-    if (typeof (usingRaceID) == "string") {
-        raceID = usingRaceID
-    } else {
-        raceID = document.getElementById("race-list").value
-        Elex.selectedRaceID = raceID
-    }
+function showRaceResults(raceID) {
+    document.getElementById("race-list").value = raceID
+    Elex.selectedRaceID = raceID
     for (i = 0; i < Elex.resultData.features.length; i++) {
         let precintData = Elex.resultData.features[i].properties
         precintData.dcolor = "black"
@@ -112,11 +131,11 @@ function showRaceResults(usingRaceID) {
         if (Elex.map.getLayer('precincts')) {
             Elex.map.removeLayer("precincts")
         }
-        Elex.map.getSource("precincts").setData(Elex.resultData)
+        Elex.map.getSource("precincts-"+Elex.selectedElection).setData(Elex.resultData)
         Elex.map.addLayer({
             "id": "precincts",
             "type": "fill",
-            "source": "precincts",
+            "source": "precincts-"+Elex.selectedElection,
             "paint": {
                 "fill-color": ["get", "dcolor"],
                 "fill-outline-color": "black",
@@ -127,8 +146,8 @@ function showRaceResults(usingRaceID) {
 }
 
 const Elex = {
-    selectedElection: "latest",
-    selectedRaceID: "300",
+    selectedElection: elections.defaultElectionId,
+    selectedRaceID: elections[elections.defaultElectionId].defaultRaceId,
     resultData: null,
     map: null,
     races: null,

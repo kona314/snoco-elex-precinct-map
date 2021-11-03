@@ -80,8 +80,9 @@
         <div class="row dark" style="height: 100%;">
             <div class="col-12 col-md-2 left-column">
                 <p class="mt-1 small">Made by <a href="https://konafarry.com">Kona Farry</a>. Data from <a href="https://www.snohomishcountywa.gov/5737/Get-Current-and-Past-Election-Results-an">Snohomish County</a>.</p>
-                <select id="race-list" class="mb-1 form-control custom-select" onchange="showRaceResults()">
-                    <option value="300" disabled selected>Select a race</option>
+                <select id="elex-list" class="mb-1 form-control custom-select" onchange="didChangeElection()"></select>
+                <select id="race-list" class="mb-1 form-control custom-select" onchange="didChangeSelect()">
+                    <!-- <option value="300" disabled selected>Select a race</option> -->
                 </select>
                 <hr>
                 <div id="details">
@@ -108,13 +109,64 @@
     </div>
 </body>
 <script>
+    const elexSelect = document.getElementById("elex-list")
+    let i, L = elexSelect.options.length - 1;
+    for (i = L; i >= 0; i--) {
+        elexSelect.remove(i)
+    }
+    Object.keys(elections).filter(k => k != "defaultElectionId").forEach(elexID => {
+        let o = new Option(elections[elexID].name, elexID)
+        elexSelect.add(o)
+    })
+    elexSelect.value = elections.defaultElectionId
+
     mapboxgl.accessToken = 'pk.eyJ1Ijoia29uYTMxNCIsImEiOiJjanIxMjcyNmowaGFkNDNud3dmcXE0YXNqIn0.-1Icvfh04HycYwJczACUaA';
+
+    function didChangeElection() {
+        loadElection(document.getElementById("elex-list").value)
+    }
 
     function getMapTheme() {
         if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
             return "mapbox://styles/mapbox/dark-v10"
         } else {
             return "mapbox://styles/mapbox/light-v10"
+        }
+    }
+
+    function didChangeSelect() {
+        showRaceResults(document.getElementById("race-list").value)
+    }
+
+    function loadElection(electionId) {
+        const election = elections[electionId]
+        if (election) {
+            Elex.selectedElection = electionId
+            Elex.selectedRaceID = election.defaultRaceId
+            getRaces(result => {
+                const raceSelect = document.getElementById("race-list")
+                let i, L = raceSelect.options.length - 1;
+                for (i = L; i >= 0; i--) {
+                    raceSelect.remove(i)
+                }
+                Object.keys(result).forEach(raceID => {
+                    let o = new Option(result[raceID].name, raceID)
+                    raceSelect.add(o)
+                })
+                // if (!Elex.map.getSource("precincts-"+electionId)) {
+                    getData(r => {
+                        if (!Elex.map.getSource("precincts-"+electionId)) {
+                            Elex.map.addSource("precincts-"+electionId, {
+                                "type": "geojson",
+                                "data": r,
+                            })
+                        }
+                        showRaceResults(election.defaultRaceId)
+                    })
+                // } else {
+                //     showRaceResults(election.defaultRaceId)
+                // }
+            })
         }
     }
 
@@ -125,7 +177,7 @@
                 "type": "geojson",
                 "data": Elex.resultData,
             })
-            showRaceResults()
+            showRaceResults(Elex.selectedRaceID)
         })
     })
 
@@ -137,21 +189,8 @@
     });
 
     Elex.map.on('load', function () {
-        getRaces(result => {
-            // races = result
-            let raceSelect = document.getElementById("race-list")
-            Object.keys(result).forEach(raceID => {
-                let o = new Option(result[raceID].name, raceID)
-                raceSelect.add(o)
-            })
-            getData(r => {
-                Elex.map.addSource("precincts", {
-                    "type": "geojson",
-                    "data": r,
-                })
-                showRaceResults()
-            })
-        })
+        loadElection(elections.defaultElectionId)
+
         Elex.map.dragRotate.disable()
         Elex.map.touchZoomRotate.disableRotation()
 

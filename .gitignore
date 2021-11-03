@@ -1,7 +1,9 @@
 .vscode/*
 .DS_Store
 test.json
-precinct_map.geojson
+test.geojson
+precincts_2020.geojson
+precincts_2021.geojson
 precincts.geojson
 latest.json
 2020-11-06T16:48:42.xml

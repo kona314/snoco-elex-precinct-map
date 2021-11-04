@@ -75,10 +75,14 @@ function populateSidebar(precinctInfo, precinctResults) {
         // let li = document.createElement("li")
         document.getElementById("det-candidate-list").innerHTML += `<div class="key-color" style="background-color: ${can.color}; height: 20px; width: 20px;"></div>`
         document.getElementById("det-candidate-list").innerHTML += "<b>" + can.name + "</b><br>"
-        document.getElementById("det-candidate-list").innerHTML += "<i class='small'>County</i><br>" + can.total_votes + " (" + Math.round((can.total_votes / votesForCandidatesInRace) * 100) + "%)"
+        const candidatePercent = can.total_votes / votesForCandidatesInRace
+        document.getElementById("det-candidate-list").innerHTML += "<i class='small'>County</i><br>" + can.total_votes + " (" + Math.round(candidatePercent * 100) + "%)"
         if (precinctInfo && precinctResults && precinctResults.candidates[can.name]) {
             let precicntCan = precinctResults.candidates[can.name]
-            document.getElementById("det-candidate-list").innerHTML += "<br><i class='small'>" + precinctInfo.PRECINCT_N + "</i><br>" + precicntCan.count + " (" + Math.round((precicntCan.count / votesForCandidatesInPrecinct) * 100) + "%)"
+            const precinctCandidatePercent = precicntCan.count / votesForCandidatesInPrecinct
+            const percentageDifference = precinctCandidatePercent - candidatePercent 
+            const displayDiff = Math.round(percentageDifference * 1000)/10
+            document.getElementById("det-candidate-list").innerHTML += "<br><i class='small'>" + precinctInfo.PRECINCT_N + "</i><br>" + precicntCan.count + " (" + Math.round(precinctCandidatePercent * 100) + "%) <small class='text-secondary'>" + (displayDiff > 0 ? "+" : displayDiff == 0 ? "±" : "") + displayDiff + "%</small>"
         }
         // document.getElementById("det-candidate-list").appendChild(li)
     }

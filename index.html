@@ -89,12 +89,14 @@
                     <h5>Snohomish County</h5>
                     Registered voters: <span id="det-reg-voters"></span><br>
                     Ballots cast: <span id="det-ballots-cast"></span><br>
+                    Over/undervotes: <span id="det-overundervotes"></span><br>
                     Turnout: <span id="det-turnout"></span><br>
                     <br>
                     <div id="precinct-detail" hidden>
                         <h5 id="det-precinct-name">This Precinct</h5>
                         Registered voters: <span id="det-precinct-reg-voters"></span><br>
                         Ballots cast: <span id="det-precinct-ballots-cast"></span><br>
+                        Over/undervotes: <span id="det-precinct-overundervotes"></span><br>
                         Turnout: <span id="det-precinct-turnout"></span><br>
                         <br>
                     </div>
@@ -203,12 +205,18 @@
                     let race = races[Elex.selectedRaceID]
                     populateSidebar(data, race)
                     html = "<b>" + data.PRECINCT_N + "</b><br><i>" + race.name + "</i><p>"
-                    let candidates = Object.keys(race.candidates)
-                    for (i in candidates) {
-                        let name = candidates[i]
-                        if (race.candidates[name].count > 0) {
-                            html += `<b>` + name + "</b>: " + Math.round((race.candidates[name].count / race.ballots_cast) * 100) + "%<br>"
+                    if (race.ballots_cast > 0) {
+                        let candidates = Object.keys(race.candidates)
+                        for (i in candidates) {
+                            let name = candidates[i]
+                            if (race.candidates[name].count > 0) {
+                                html += `<b>` + name + "</b>: " + Math.round((race.candidates[name].count / race.ballots_cast) * 100) + "%<br>"
+                            }
                         }
+                        const overUnderPercent = Math.round(((race.overvotes + race.undervotes) / race.ballots_cast) * 100)
+                        html += "<small class='text-secondary mt-2'>Over/undervotes: " + overUnderPercent + "%</small>"
+                    } else {
+                        html += "No ballots in this precinct have been counted for this race."
                     }
                     html += "</p>"
                 }

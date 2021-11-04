@@ -65,17 +65,20 @@ function populateSidebar(precinctInfo, precinctResults) {
     // document.getElementById("det-race-name").innerHTML = race.name
     document.getElementById("det-reg-voters").innerHTML = race.voters
     document.getElementById("det-ballots-cast").innerHTML = race.ballots_cast
+    document.getElementById("det-overundervotes").innerHTML = race.overvotes + "/" + race.undervotes
     document.getElementById("det-turnout").innerHTML = Math.round((race.ballots_cast / race.voters) * 100) + "%"
     document.getElementById("det-candidate-list").innerHTML = ""
+    const votesForCandidatesInRace = race.ballots_cast - race.overvotes - race.undervotes
+    const votesForCandidatesInPrecinct = precinctResults ? precinctResults.ballots_cast - precinctResults.overvotes - precinctResults.undervotes : 0
     for (i in race.candidates) {
         let can = race.candidates[i]
         // let li = document.createElement("li")
         document.getElementById("det-candidate-list").innerHTML += `<div class="key-color" style="background-color: ${can.color}; height: 20px; width: 20px;"></div>`
         document.getElementById("det-candidate-list").innerHTML += "<b>" + can.name + "</b><br>"
-        document.getElementById("det-candidate-list").innerHTML += "<i class='small'>County</i><br>" + can.total_votes + " (" + Math.round((can.total_votes / race.ballots_cast) * 100) + "%)"
+        document.getElementById("det-candidate-list").innerHTML += "<i class='small'>County</i><br>" + can.total_votes + " (" + Math.round((can.total_votes / votesForCandidatesInRace) * 100) + "%)"
         if (precinctInfo && precinctResults && precinctResults.candidates[can.name]) {
             let precicntCan = precinctResults.candidates[can.name]
-            document.getElementById("det-candidate-list").innerHTML += "<br><i class='small'>" + precinctInfo.PRECINCT_N + "</i><br>" + precicntCan.count + " (" + Math.round((precicntCan.count / precinctInfo.ballots_cast) * 100) + "%)"
+            document.getElementById("det-candidate-list").innerHTML += "<br><i class='small'>" + precinctInfo.PRECINCT_N + "</i><br>" + precicntCan.count + " (" + Math.round((precicntCan.count / votesForCandidatesInPrecinct) * 100) + "%)"
         }
         // document.getElementById("det-candidate-list").appendChild(li)
     }
@@ -83,6 +86,7 @@ function populateSidebar(precinctInfo, precinctResults) {
         document.getElementById("det-precinct-name").innerHTML = precinctInfo.PRECINCT_N
         document.getElementById("det-precinct-reg-voters").innerHTML = precinctInfo.voters
         document.getElementById("det-precinct-ballots-cast").innerHTML = precinctResults.ballots_cast
+        document.getElementById("det-precinct-overundervotes").innerHTML = precinctResults.overvotes + "/" + precinctResults.undervotes
         document.getElementById("det-precinct-turnout").innerHTML = Math.round((precinctInfo.ballots_cast / precinctInfo.voters)*100) + "%"
     }
     document.getElementById("precinct-detail").hidden = precinctInfo == null
